@@ -1,0 +1,163 @@
+# %LOCALAPPDATA%\rio\config.toml  (Rio 0.5.28)
+#
+# Rio set up to match ~/.config/wezterm 1:1 where Rio can, with Warp-style
+# shortcuts. Native Rio tabs and splits only, no multiplexer.
+#
+#   config.toml                -> this file
+#   themes\wezterm-dark.toml   -> Windows dark mode: true black
+#   themes\wezterm-dim.toml    -> Windows light mode: lifted dark #121317
+#
+# Saves apply live. Full reference: https://rioterm.com/docs/config
+
+# ── Top-level settings (TOML: these must come before any [section]) ────
+# Colors from palette.lua, WezTerm's rule: Windows light -> dim #121317,
+# Windows dark -> pure black. Rio 0.5.28 can't read the Windows theme at
+# startup (its system_theme() is unimplemented there), so `theme` is the
+# starting colors and [adaptive-theme] below switches live whenever you
+# change the Windows theme while Rio is open.
+theme = "wezterm-dim"
+
+# Truecolor inside WSL (WSLENV forwards the variable into Linux).
+env-vars = ["COLORTERM=truecolor", "WSLENV=COLORTERM"]
+
+line-height = 1.1                        # WezTerm line_height
+margin = [10, 14, 6, 14]                 # WezTerm window_padding: top right bottom left
+
+scrollback-history-limit = 10000
+enable-scroll-bar = true
+copy-on-select = true                    # WezTerm copies a selection on release
+hide-mouse-cursor-when-typing = true
+draw-bold-text-with-light-colors = true  # WezTerm bold_brightens_ansi_colors
+confirm-before-quit = true
+
+# ── Shell ──────────────────────────────────────────────────────────────
+# Fedora in WSL, starting in the Linux home (WezTerm's domains.lua).
+[shell]
+program = "wsl.exe"
+args = ["-d", "FedoraLinux-44", "--cd", "~"]
+
+# ── Look: light/dark switching (live) ──────────────────────────────────
+[adaptive-theme]
+light = "wezterm-dim"
+dark = "wezterm-dark"
+
+# ── Look: font ─────────────────────────────────────────────────────────
+# JetBrains Mono, same as WezTerm, with full-size icons.
+# Size is in pixels: WezTerm's 11pt = ~14.7px.
+[fonts]
+family = "JetBrainsMono NF"
+size = 15
+hinting = true
+features = ["-calt", "-liga"]     # ligatures off, as in the tuned WezTerm
+use-drawable-chars = true         # crisp built-in box / powerline glyphs
+
+# ── Look: window ───────────────────────────────────────────────────────
+[window]
+columns = 160                     # WezTerm initial_cols
+rows = 40                         # WezTerm initial_rows
+mode = "Windowed"
+opacity = 1.0                     # e.g. 0.96 for slight transparency
+decorations = "Enabled"
+# Rio 0.5.28 on Windows shifts colors with the default "srgb" (starship's
+# #007a3d green showed as #347843). "display-p3" renders hex colors exactly.
+colorspace = "display-p3"
+
+[cursor]
+shape = "block"
+blinking = false                  # steady block, as in the tuned WezTerm
+
+# ── Tabs / splits (Rio's native "navigation") ─────────────────────────
+[navigation]
+mode = "Tab"
+hide-if-single = true             # no tab strip until you open a 2nd tab
+use-terminal-title = true         # tab label = shell title (dir / running cmd)
+use-split = true
+unfocused-split-opacity = 0.65    # WezTerm inactive_pane_hsb brightness 0.65
+max-tab-width = 260               # ~ WezTerm tab_max_width 32
+# Rio would hand WSL's Linux cwd to Windows, which can't open it; new tabs
+# start in the Linux home instead (same as WezTerm's Ctrl+T).
+current-working-directory = false
+
+# Window/tab title: shell title, else the current dir, else the program.
+[title]
+content = "{{ TITLE || RELATIVE_PATH || PROGRAM }}"
+
+# ── Hints: WezTerm QuickSelect + Ctrl+Click links ──────────────────────
+[hints]
+alphabet = "jfkdlsahgurieowpq"
+
+# Ctrl+Click (or Ctrl+Shift+U, then the label) opens a URL.
+[[hints.rules]]
+regex = "(https?://|mailto:|ftp://|file:|ssh://|git://)[^\\s<>\"'`{}|\\\\^]+"
+hyperlinks = true
+post-processing = true
+action = "Open"
+mouse = { enabled = true, mods = ["Control"] }
+binding = { key = "U", mods = ["Control", "Shift"] }
+
+# Ctrl+Shift+Space labels URLs / paths / git hashes / IPs / UUIDs on screen;
+# type a label to COPY it (WezTerm's QuickSelect).
+[[hints.rules]]
+regex = "(https?://[^\\s<>\"'`]+)|((~|\\.{1,2})?/[\\w.@~+-]+(/[\\w.@~+-]+)*)|(\\b[0-9a-f]{7,40}\\b)|(\\b\\d{1,3}(\\.\\d{1,3}){3}(:\\d+)?\\b)|(\\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\b)"
+post-processing = true
+action = "Copy"
+mouse = { enabled = false }
+binding = { key = "Space", mods = ["Control", "Shift"] }
+
+# ── Keys: Warp-style, as in WezTerm keymaps.lua ────────────────────────
+# Rio defaults that stay as-is:
+#   Ctrl+Shift+T new tab         Ctrl+Tab / Ctrl+Shift+Tab  next / prev tab
+#   Ctrl+Shift+N new window      Ctrl+Shift+W  close pane (or tab)
+#   Ctrl+Shift+C / V copy/paste  Ctrl+Shift+F / B  search forward / back
+#   Ctrl+Shift+P command palette Ctrl+Shift+,  open this config
+#   Ctrl+= / - / 0 font size     Shift+PgUp/PgDn/Home/End  scroll
+#   Alt+Enter fullscreen
+[bindings]
+keys = [
+  # Tabs
+  { key = "t",        with = "control",       action = "createtab" },
+  { key = "w",        with = "control",       action = "closetab" },
+  { key = "]",        with = "control|shift", action = "selectnexttab" },
+  { key = "[",        with = "control|shift", action = "selectprevtab" },
+  { key = "pagedown", with = "control",       action = "selectnexttab" },
+  { key = "pageup",   with = "control",       action = "selectprevtab" },
+  { key = "pagedown", with = "control|shift", action = "movecurrenttabtonext" },
+  { key = "pageup",   with = "control|shift", action = "movecurrenttabtoprev" },
+  { key = "1", with = "control", action = "selecttab(0)" },
+  { key = "2", with = "control", action = "selecttab(1)" },
+  { key = "3", with = "control", action = "selecttab(2)" },
+  { key = "4", with = "control", action = "selecttab(3)" },
+  { key = "5", with = "control", action = "selecttab(4)" },
+  { key = "6", with = "control", action = "selecttab(5)" },
+  { key = "7", with = "control", action = "selecttab(6)" },
+  { key = "8", with = "control", action = "selecttab(7)" },
+  { key = "9", with = "control", action = "selectlasttab" },
+
+  # Splits
+  { key = "d",     with = "control|shift", action = "splitright" },
+  { key = "d",     with = "control|alt",   action = "splitdown" },
+  { key = "left",  with = "control|shift", action = "selectprevsplit" },
+  { key = "up",    with = "control|shift", action = "selectprevsplit" },
+  { key = "right", with = "control|shift", action = "selectnextsplit" },
+  { key = "down",  with = "control|shift", action = "selectnextsplit" },
+  { key = "left",  with = "control|alt",   action = "movedividerleft" },
+  { key = "right", with = "control|alt",   action = "movedividerright" },
+  { key = "up",    with = "control|alt",   action = "movedividerup" },
+  { key = "down",  with = "control|alt",   action = "movedividerdown" },
+
+  # Clipboard (Ctrl+C stays SIGINT; selecting copies)
+  { key = "v", with = "control", action = "paste" },
+
+  # Copy mode, quick select, clear
+  { key = "x",     with = "control|shift", action = "togglevimode" },
+  { key = "space", with = "control|shift", mode = "vi", action = "togglevimode" },
+  { key = "k",     with = "control|shift", action = "clearhistory" },
+
+  # Window / app
+  { key = "f11", with = "none",                 action = "togglefullscreen" },
+  { key = "q",   with = "control|alt|shift",    action = "quit" },
+]
+
+# No bell dot on tabs.
+[bell]
+tab-indicator = false
